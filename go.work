@@ -2,5 +2,6 @@ go 1.21.4
 
 use (
 	./comments
+	./moderation
 	./posts
 )
