@@ -9,16 +9,37 @@ import (
 
 type Event[T any] struct {
 	Type string `json:"type"`
-	Data T `json:"data"`
+	Data T      `json:"data"`
 }
 type Comment struct {
-	ID string `json:"id"`
-	PostID string `json:"post_id"`
+	ID      string `json:"id"`
+	PostID  string `json:"post_id"`
 	Content string `json:"content"`
-	Status string `json:"status"`
+	Status  string `json:"status"`
+}
+
+type SubscribeRequest struct {
+	Host      string `json:"host"`
+	EventType string `json:"event_type"`
 }
 
 type CommentEvent = Event[Comment]
+
+var subscribers = make(map[string][]string)
+
+func Subscribe(c *fiber.Ctx) error {
+	var subscribeRequest = new(SubscribeRequest)
+	c.BodyParser(&subscribeRequest)
+	if subscribeRequest.EventType == "" || subscribeRequest.Host == "" {
+		return fiber.NewError(400, "Event Type and Host are required")
+	}
+
+	if subscribers[subscribeRequest.EventType] == nil {
+		return fiber.NewError(400, "Event Type does not exist")
+	}
+	subscribers[subscribeRequest.EventType] = append(subscribers[subscribeRequest.EventType], subscribeRequest.Host)
+	return nil
+}
 
 func FindEventType(body []byte) string {
 	var t string
@@ -30,7 +51,7 @@ func FindEventType(body []byte) string {
 			for body[j] != ' ' {
 				j++
 			}
-			j+=2
+			j += 2
 			for body[j] != '"' {
 				t += string(body[j])
 				j++
@@ -49,7 +70,7 @@ func post(c *fiber.Ctx) error {
 	fmt.Println(c.Body())
 	body := c.Body()
 	t := FindEventType(body)
-	fmt.Println("\n"+t)
+	fmt.Println("\n" + t)
 	fmt.Println(t == "comment_created")
 	return nil
 }
@@ -58,5 +79,6 @@ func main() {
 	app := fiber.New()
 
 	app.Post("/", post)
+	app.Post("/subscribe", Subscribe)
 	app.Listen(":8080")
 }
