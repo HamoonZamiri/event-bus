@@ -10,10 +10,31 @@ import (
 	"github.com/google/uuid"
 )
 
+type UnknownEvent struct {
+	Type string      `json:"type"`
+	Data interface{} `json:"data"`
+}
+
+type Comment struct {
+	ID string `json:"id"`
+	PostID string `json:"post_id"`
+	Content string `json:"content"`
+	Status string `json:"status"`
+}
+
+type Event[T any] struct {
+	Type string `json:"type"`
+	Data T      `json:"data"`
+}
+
+type CommentEvent = Event[Comment]
+
 type Post struct {
 	ID string `json:"id"`
 	Title string `json:"title"`
+	Comments []Comment `json:"comments"`
 }
+
 type Response[T any] struct {
 	Message string `json:"message"`
 	Data T `json:"data"`
@@ -34,7 +55,10 @@ func post(c *fiber.Ctx) error {
 			Message: "Title is required",
 		})
 	}
+
+	p.Comments = []Comment{}
 	posts[id] = *p
+
 	res := Response [Post]{
 		Message: "Post created successfully",
 		Data: *p,
@@ -43,8 +67,30 @@ func post(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
-func receiveEvent(c *fiber.Ctx) error {
-	fmt.Printf("Received event: %s\n", c.Body())
+func handleCommentModerated(c *fiber.Ctx) error {
+	commentEvent := new(CommentEvent)
+	c.BodyParser(commentEvent)
+
+	post := posts[commentEvent.Data.PostID]
+	post.Comments = append(post.Comments, commentEvent.Data)
+
+	return nil
+}
+
+func handleEvent(c *fiber.Ctx) error {
+	unknownEvent := new(UnknownEvent)
+	if err := c.BodyParser(unknownEvent); err != nil {
+		return err
+	}
+
+	switch unknownEvent.Type {
+		case "comment_moderated":
+			if err := handleCommentModerated(c); err != nil {
+				fmt.Println(err)
+			}
+		default:
+			return nil
+	}
 	return nil
 }
 
@@ -101,7 +147,7 @@ func main() {
 	})
 
 	app.Post("/", post)
-	app.Post("/events", receiveEvent)
+	app.Post("/events", handleEvent)
 
 	app.Listen(":8081")
 }
