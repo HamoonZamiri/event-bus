@@ -1,4 +1,4 @@
-module example/moderation
+module example/event-bus
 
 go 1.21.4
 
