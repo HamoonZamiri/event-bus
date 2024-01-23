@@ -71,8 +71,15 @@ func handleCommentModerated(c *fiber.Ctx) error {
 	commentEvent := new(CommentEvent)
 	c.BodyParser(commentEvent)
 
-	post := posts[commentEvent.Data.PostID]
+	postId := commentEvent.Data.PostID
+	post, ok := posts[postId]
+
+	if !ok {
+		return fiber.NewError(404, "Post not found")
+	}
+
 	post.Comments = append(post.Comments, commentEvent.Data)
+	posts[postId] = post
 
 	return nil
 }
@@ -130,7 +137,7 @@ func publishEvent(eventType string, data interface{}) error {
 
 func main() {
 	// subscribe to events
-	err := subscribeToEvents([]string{"post_created"})
+	err := subscribeToEvents([]string{"post_created", "comment_moderated"})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -51,7 +51,7 @@ func subscribeToEvents(events []string) error {
 	for _, event := range events {
 		agent := fiber.Post("http://localhost:8080/subscribe")
 		body := fiber.Map{
-			"host": "http://localhost:8081",
+			"host": "http://localhost:8082",
 			"event_type": event,
 		}
 
@@ -97,6 +97,7 @@ func handleEvent(c *fiber.Ctx) error {
 }
 
 func main() {
+	subscribeToEvents([]string{"comment_created"})
 	app := fiber.New()
 
 	app.Get("/", func(c *fiber.Ctx) error {

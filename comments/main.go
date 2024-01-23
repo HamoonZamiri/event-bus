@@ -37,7 +37,7 @@ func subscribeToEvents(events []string) error {
 	for _, event := range events {
 		agent := fiber.Post("http://localhost:8080/subscribe")
 		body := fiber.Map{
-			"host": "http://localhost:8081",
+			"host": "http://localhost:8083",
 			"event_type": event,
 		}
 
@@ -79,6 +79,22 @@ func handleEvent(c *fiber.Ctx) error {
 	return nil
 }
 
+func publishEvent(eventType string, data interface{}) error {
+	agent := fiber.Post("http://localhost:8080/publish")
+	body := fiber.Map{
+		"type": eventType,
+		"data": data,
+	}
+
+	agent.JSON(body)
+	_, _, errs := agent.Bytes()
+
+	if errs != nil {
+		return errs[0]
+	}
+	return nil;
+}
+
 func post(c *fiber.Ctx) error {
 	var commentID = uuid.New().String()
 	comment := new(Comment)
@@ -96,11 +112,15 @@ func post(c *fiber.Ctx) error {
 	comments[commentID] = *comment
 
 	// Publish an event to the event bus
+	if err := publishEvent("comment_created", comment); err != nil {
+		return err
+	}
 
 	return c.JSON(comment)
 }
 
 func main() {
+	subscribeToEvents([]string{"comment_moderated", "post_created"})
 	app := fiber.New()
 
 	app.Get("/", func(c *fiber.Ctx) error {

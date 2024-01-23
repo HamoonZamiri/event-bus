@@ -37,12 +37,8 @@ var subscribers = make(map[string][]string)
 
 func initializeSubscribers() {
 	subscribers["comment_created"] = []string{}
-	subscribers["comment_updated"] = []string{}
 	subscribers["post_created"] = []string{}
-	subscribers["post_updated"] = []string{}
-	subscribers["post_deleted"] = []string{}
-	subscribers["comment_deleted"] = []string{}
-	fmt.Println(subscribers)
+	subscribers["comment_moderated"] = []string{}
 }
 
 func Subscribe(c *fiber.Ctx) error {
@@ -59,6 +55,7 @@ func Subscribe(c *fiber.Ctx) error {
 
 	subscribers[subscribeRequest.EventType] = append(subscribers[subscribeRequest.EventType], subscribeRequest.Host)
 
+	fmt.Println(subscribers)
 	return nil
 }
 
@@ -94,7 +91,6 @@ func handleEvent(eventType string, event Event2) []error {
 	}
 
 	for _, s := range subscribers[eventType] {
-		fmt.Println("Sending event to: ", s)
 		agent := fiber.Post(s + "/events")
 		agent.JSON(event)
 
@@ -126,12 +122,12 @@ func postEvent(c *fiber.Ctx) error {
 			fmt.Println(err)
 		}
 	}
-	c.Status(200).JSON(fiber.Map{
+	return c.Status(200).JSON(fiber.Map{
 		"message": "Event sent successfully",
 		"data":    body,
+		"receivers": subscribers[eventType],
 	})
 
-	return nil
 }
 
 func main() {
