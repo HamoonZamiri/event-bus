@@ -1,19 +1,26 @@
 package service
 
 import (
+	"errors"
 	"example/event-bus/model"
+	"fmt"
 	"slices"
+
+	"github.com/gofiber/fiber/v2"
 )
 
+// in memory event storage struct
+// Event Service interface allows us to implement with another storage system
+// like redis down the line and just swap in the new implementation into the
+// controller
 type EventStore struct {
 	Subscribers map[string][]string
-	Events map[string][]*model.UnknownEvent
+	Events      map[string][]*model.UnknownEvent
 }
 
 type EventService interface {
-	PostEventType(eventType string) error
-	Subscribe(eventType string, event interface{}) error
-	PublishEvent(eventType string, event model.UnknownEvent)error
+	Subscribe(eventType string, host string) error
+	PublishEvent(eventType string, event *model.UnknownEvent) error
 	GetSubscribers(eventType string) ([]string, error)
 	GetEventsByType(eventType string) ([]*model.UnknownEvent, error)
 	DeleteSubscriber(eventType string, host string) error
@@ -30,13 +37,29 @@ func NewEventStore(eventTypes []string) *EventStore {
 	return eventStore
 }
 
-func (es *EventStore) Subscribe(eventType string, event interface{}) error {
-	es.Subscribers[eventType] = append(es.Subscribers[eventType], event.(string))
+func (es *EventStore) Subscribe(eventType string, host string) error {
+	if es.Subscribers[eventType] == nil {
+		return errors.New("event Type does not exist")
+	}
+
+	es.Subscribers[eventType] = append(es.Subscribers[eventType], host)
 	return nil
 }
 
-func (es *EventStore) PublishEvent(eventType string, event model.UnknownEvent) error {
-	es.Events[eventType] = append(es.Events[eventType], &event)
+func (es *EventStore) PublishEvent(eventType string, event *model.UnknownEvent) error {
+
+	for _, s := range es.Subscribers[event.Type] {
+		go func(s string) {
+			agent := fiber.Post(s + "/events")
+			agent.JSON(event)
+			_, _, errs := agent.Bytes()
+			if len(errs) > 0 {
+				fmt.Println("Error publishing event to: " + s)
+			}
+		}(s)
+	}
+
+	es.Events[eventType] = append(es.Events[eventType], event)
 	return nil
 }
 

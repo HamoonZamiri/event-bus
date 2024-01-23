@@ -2,8 +2,6 @@ package controller
 
 import (
 	"example/event-bus/model"
-	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,18 +22,17 @@ func (controller *Controller) Subscribe(c *fiber.Ctx) error {
 		return fiber.NewError(400, "Event Type and Host are required")
 	}
 
-	eStore := controller.eventStore
-	if eStore.Subscribers[req.EventType] == nil {
-		return fiber.NewError(400, "Event Type does not exist")
+	err = controller.eventStore.Subscribe(req.EventType, req.Host)
+
+	if err != nil {
+		return fiber.NewError(400, err.Error())
 	}
 
-	eStore.Subscribers[req.EventType] = append(eStore.Subscribers[req.EventType], req.Host)
-	controller.eventStore = eStore
 	return c.Status(200).JSON("Subscribed successfully")
 }
 
 func (controller *Controller) Publish(c *fiber.Ctx) error {
-	unknownEvent := model.UnknownEvent{}
+	unknownEvent := new(model.UnknownEvent)
 	err := c.BodyParser(&unknownEvent)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
@@ -45,20 +42,9 @@ func (controller *Controller) Publish(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Event Type and Data are required")
 	}
 
-	controller.eventStore.PublishEvent(unknownEvent.Type, unknownEvent)
-	if controller.eventStore.Subscribers[unknownEvent.Type] == nil {
-		return fiber.NewError(400, "Event Type does not exist")
-	}
-
-	for _, s := range controller.eventStore.Subscribers[unknownEvent.Type] {
-		go func(s string) {
-			agent := fiber.Post(s + "/events")
-			agent.JSON(unknownEvent)
-			_, _, errs := agent.Bytes()
-			if len(errs) > 0 {
-				fmt.Println("Error publishing event to: " + s)
-			}
-		}(s)
+	err = controller.eventStore.PublishEvent(unknownEvent.Type, unknownEvent)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON("Event published successfully")
