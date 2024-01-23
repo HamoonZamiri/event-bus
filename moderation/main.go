@@ -31,7 +31,7 @@ var comments = make([]Comment, 0)
 func publishEvent(eventType string, data interface{}) error {
 	// Publish an event to the event bus
 
-	agent := fiber.Post("http://localhost:8080/publish")
+	agent := fiber.Post("http://localhost:8080/api/publish")
 	body := fiber.Map{
 		"type": eventType,
 		"data": data,
@@ -49,7 +49,7 @@ func publishEvent(eventType string, data interface{}) error {
 
 func subscribeToEvents(events []string) error {
 	for _, event := range events {
-		agent := fiber.Post("http://localhost:8080/subscribe")
+		agent := fiber.Post("http://localhost:8080/api/subscribe")
 		body := fiber.Map{
 			"host": "http://localhost:8082",
 			"event_type": event,
@@ -66,10 +66,7 @@ func subscribeToEvents(events []string) error {
 }
 
 func isValidComment(comment string) bool {
-	if strings.Contains(comment, "orange") {
-		return false
-	}
-	return true
+	return !strings.Contains(comment, "orange")
 }
 
 func handleEvent(c *fiber.Ctx) error {
