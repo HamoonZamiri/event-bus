@@ -2,6 +2,7 @@ package controller
 
 import (
 	"example/event-bus/model"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -13,7 +14,6 @@ type SubscribeRequest struct {
 func (controller *Controller) Subscribe(c *fiber.Ctx) error {
 	var req SubscribeRequest
 	err := c.BodyParser(&req)
-
 	if err != nil {
 		return fiber.NewError(400, "Invalid request body")
 	}
@@ -22,7 +22,7 @@ func (controller *Controller) Subscribe(c *fiber.Ctx) error {
 		return fiber.NewError(400, "Event Type and Host are required")
 	}
 
-	err = controller.eventStore.Subscribe(req.EventType, req.Host)
+	err = controller.EventStore.Subscribe(req.EventType, req.Host)
 
 	if err != nil {
 		return fiber.NewError(400, err.Error())
@@ -33,6 +33,8 @@ func (controller *Controller) Subscribe(c *fiber.Ctx) error {
 
 func (controller *Controller) Publish(c *fiber.Ctx) error {
 	unknownEvent := new(model.UnknownEvent)
+	es := controller.EventStore
+
 	err := c.BodyParser(&unknownEvent)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
@@ -42,7 +44,7 @@ func (controller *Controller) Publish(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Event Type and Data are required")
 	}
 
-	err = controller.eventStore.PublishEvent(unknownEvent.Type, unknownEvent)
+	err = es.PublishEvent(unknownEvent.Type, unknownEvent)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
