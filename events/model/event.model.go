@@ -1,13 +1,13 @@
 package model
 
 type UnknownEvent struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
+	Data any    `json:"data"`
+	Type string `json:"type"`
 }
 
 type Event[T any] struct {
-	Type string `json:"type"`
 	Data T      `json:"data"`
+	Type string `json:"type"`
 }
 
 type Comment struct {
