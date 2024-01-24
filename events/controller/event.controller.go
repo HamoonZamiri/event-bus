@@ -51,3 +51,22 @@ func (controller *Controller) Publish(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON("Event published successfully")
 }
+
+func (controller *Controller) GetSubscribers(c *fiber.Ctx) error {
+	params := c.AllParams()
+
+	event_type := params["type"]
+	if event_type == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Event Type is required")
+	}
+
+	subscribers, err := controller.EventStore.GetSubscribers(event_type)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Subscribers retrieved successfully",
+		"data":    subscribers,
+	})
+}
