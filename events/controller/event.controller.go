@@ -89,3 +89,20 @@ func (controller *Controller) GetEventsByType(c *fiber.Ctx) error {
 		"data":    events,
 	})
 }
+
+func (controller *Controller) DeleteSubscriber(c *fiber.Ctx) error {
+	params := c.AllParams()
+	eventType := params["type"]
+	host := params["host"]
+
+	if eventType == "" || host == "" {
+		return fiber.NewError(400, "Event Type and Host are required")
+	}
+
+	err := controller.EventStore.DeleteSubscriber(eventType, host)
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+
+	return c.Status(fiber.StatusOK).SendString("Subscriber successfully deleted")
+}
