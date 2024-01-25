@@ -7,5 +7,5 @@ func (controller *Controller) Register(app *fiber.App) {
 	core.Post("/publish", controller.Publish)
 	core.Post("/subscribe", controller.Subscribe)
 	core.Get("/subscribe/:type", controller.GetSubscribers)
+	core.Get("/:type", controller.GetEventsByType)
 }
-

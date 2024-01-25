@@ -70,3 +70,22 @@ func (controller *Controller) GetSubscribers(c *fiber.Ctx) error {
 		"data":    subscribers,
 	})
 }
+
+func (controller *Controller) GetEventsByType(c *fiber.Ctx) error {
+	params := c.AllParams()
+
+	event_type := params["type"]
+	if event_type == "" {
+		return fiber.NewError(400, "Event type is required")
+	}
+
+	events, err := controller.EventStore.GetEventsByType(event_type)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"message": "Events retrieved successfully",
+		"data":    events,
+	})
+}
