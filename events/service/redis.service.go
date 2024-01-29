@@ -53,3 +53,8 @@ func (r *RedisClient) PublishEvent(eventType string, event *model.UnknownEvent) 
 
 	return nil
 }
+
+func (r *RedisClient) GetSubscribers(eventType string) ([]string, error) {
+	res := r.rdb.SMembers(r.ctx, eventType)
+	return res.Result()
+}
