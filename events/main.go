@@ -18,9 +18,9 @@ func main() {
 		return c.SendString("Hello, World 👋!")
 	})
 
-	// redisStore := service.NewRedisClient(ctx)
-	eventStore := service.NewEventStore([]string{"comment_created", "post_created", "comment_moderated"})
-	c := controller.NewController(eventStore)
+	redisStore := service.NewRedisClient(ctx)
+	// eventStore := service.NewEventStore([]string{"comment_created", "post_created", "comment_moderated"})
+	c := controller.NewController(redisStore)
 	c.Register(app)
 
 	app.Listen(":8080")
