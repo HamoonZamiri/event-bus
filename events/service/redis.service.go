@@ -30,7 +30,7 @@ func test2(r *RedisClient) {
 
 func NewRedisClient(ctx context.Context) *RedisClient {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "cache:6379",
 		Password: "",
 		DB:       0,
 	})
