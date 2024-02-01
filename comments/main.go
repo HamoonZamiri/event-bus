@@ -6,30 +6,32 @@ import (
 )
 
 type Comment struct {
-	ID string `json:"id"`
-	PostID string `json:"post_id"`
+	ID      string `json:"id"`
+	PostID  string `json:"post_id"`
 	Content string `json:"content"`
-	Status string `json:"status"`
+	Status  string `json:"status"`
 }
 
 type Event[T any] struct {
-	Type string `json:"type"`
 	Data T      `json:"data"`
+	Type string `json:"type"`
 }
 
 type UnknownEvent struct {
-	Type string      `json:"type"`
 	Data interface{} `json:"data"`
+	Type string      `json:"type"`
 }
 
 type Post struct {
-	ID string `json:"id"`
-	Title string `json:"title"`
+	ID       string    `json:"id"`
+	Title    string    `json:"title"`
 	Comments []Comment `json:"comments"`
 }
 
-type CommentEvent = Event[Comment]
-type PostEvent = Event[Post]
+type (
+	CommentEvent = Event[Comment]
+	PostEvent    = Event[Post]
+)
 
 var comments = make(map[string]Comment)
 
@@ -37,7 +39,7 @@ func subscribeToEvents(events []string) error {
 	for _, event := range events {
 		agent := fiber.Post("http://localhost:8080/api/subscribe")
 		body := fiber.Map{
-			"host": "http://localhost:8083",
+			"host":       "http://localhost:8083",
 			"event_type": event,
 		}
 
@@ -48,7 +50,7 @@ func subscribeToEvents(events []string) error {
 			return errs[0]
 		}
 	}
-	return nil;
+	return nil
 }
 
 func handleEvent(c *fiber.Ctx) error {
@@ -58,23 +60,23 @@ func handleEvent(c *fiber.Ctx) error {
 	}
 
 	switch unknownEvent.Type {
-		case "comment_moderated":
-			commentEvent := new(CommentEvent)
-			if err := c.BodyParser(commentEvent); err != nil {
-				return err
-			}
-			id := commentEvent.Data.ID
-			if comments[id] == (Comment{}) {
-				return fiber.NewError(404, "Moderated comment was not found!")
-			}
-			comments[id] = commentEvent.Data
-		case "post_created":
-			postEvent := new(PostEvent)
-			if err := c.BodyParser(postEvent); err != nil {
-				return err
-			}
-		default:
-			return nil
+	case "comment_moderated:pub":
+		commentEvent := new(CommentEvent)
+		if err := c.BodyParser(commentEvent); err != nil {
+			return err
+		}
+		id := commentEvent.Data.ID
+		if comments[id] == (Comment{}) {
+			return fiber.NewError(404, "Moderated comment was not found!")
+		}
+		comments[id] = commentEvent.Data
+	case "post_created":
+		postEvent := new(PostEvent)
+		if err := c.BodyParser(postEvent); err != nil {
+			return err
+		}
+	default:
+		return nil
 	}
 	return nil
 }
@@ -92,11 +94,11 @@ func publishEvent(eventType string, data interface{}) error {
 	if errs != nil {
 		return errs[0]
 	}
-	return nil;
+	return nil
 }
 
 func post(c *fiber.Ctx) error {
-	var commentID = uuid.New().String()
+	commentID := uuid.New().String()
 	comment := new(Comment)
 	if err := c.BodyParser(comment); err != nil {
 		return err
@@ -132,3 +134,4 @@ func main() {
 
 	app.Listen(":8083")
 }
+

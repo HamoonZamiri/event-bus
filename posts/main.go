@@ -11,33 +11,33 @@ import (
 )
 
 type UnknownEvent struct {
-	Type string      `json:"type"`
 	Data interface{} `json:"data"`
+	Type string      `json:"type"`
 }
 
 type Comment struct {
-	ID string `json:"id"`
-	PostID string `json:"post_id"`
+	ID      string `json:"id"`
+	PostID  string `json:"post_id"`
 	Content string `json:"content"`
-	Status string `json:"status"`
+	Status  string `json:"status"`
 }
 
 type Event[T any] struct {
-	Type string `json:"type"`
 	Data T      `json:"data"`
+	Type string `json:"type"`
 }
 
 type CommentEvent = Event[Comment]
 
 type Post struct {
-	ID string `json:"id"`
-	Title string `json:"title"`
+	ID       string    `json:"id"`
+	Title    string    `json:"title"`
 	Comments []Comment `json:"comments"`
 }
 
 type Response[T any] struct {
+	Data    T      `json:"data"`
 	Message string `json:"message"`
-	Data T `json:"data"`
 }
 
 var posts = make(map[string]Post)
@@ -59,9 +59,9 @@ func post(c *fiber.Ctx) error {
 	p.Comments = []Comment{}
 	posts[id] = *p
 
-	res := Response [Post]{
+	res := Response[Post]{
 		Message: "Post created successfully",
-		Data: *p,
+		Data:    *p,
 	}
 	publishEvent("post_created", p)
 	return c.JSON(res)
@@ -91,12 +91,12 @@ func handleEvent(c *fiber.Ctx) error {
 	}
 
 	switch unknownEvent.Type {
-		case "comment_moderated":
-			if err := handleCommentModerated(c); err != nil {
-				fmt.Println(err)
-			}
-		default:
-			return nil
+	case "comment_moderated":
+		if err := handleCommentModerated(c); err != nil {
+			fmt.Println(err)
+		}
+	default:
+		return nil
 	}
 	return nil
 }
@@ -105,7 +105,7 @@ func subscribeToEvents(events []string) error {
 	for _, event := range events {
 		agent := fiber.Post("http://localhost:8080/api/subscribe")
 		body := fiber.Map{
-			"host": "http://localhost:8081",
+			"host":       "http://localhost:8081",
 			"event_type": event,
 		}
 
@@ -116,7 +116,7 @@ func subscribeToEvents(events []string) error {
 			return errs[0]
 		}
 	}
-	return nil;
+	return nil
 }
 
 func publishEvent(eventType string, data interface{}) error {
@@ -132,7 +132,7 @@ func publishEvent(eventType string, data interface{}) error {
 	if errs != nil {
 		return errs[0]
 	}
-	return nil;
+	return nil
 }
 
 func main() {
@@ -158,3 +158,4 @@ func main() {
 
 	app.Listen(":8081")
 }
+

@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"example/event-bus/model"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -21,24 +23,16 @@ type RedisClient struct {
 	ctx context.Context
 }
 
-func test(serv EventService) {
-}
-
-func test2(r *RedisClient) {
-	test(r)
-}
-
 func NewRedisClient(ctx context.Context) *RedisClient {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "cache:6379",
-		Password: "",
-		DB:       0,
+		Addr: "cache:6379",
+		DB:   0,
 	})
 	return &RedisClient{rdb: rdb, ctx: ctx}
 }
 
 func (r *RedisClient) Subscribe(eventType string, host string) error {
-	err := r.rdb.SAdd(r.ctx, eventType, host).Err()
+	err := r.rdb.SAdd(r.ctx, eventType+":sub", host).Err()
 	if err != nil {
 		return err
 	}
@@ -48,26 +42,44 @@ func (r *RedisClient) Subscribe(eventType string, host string) error {
 
 func (r *RedisClient) PublishEvent(eventType string, event *model.UnknownEvent) error {
 	val, err := json.Marshal(event)
+	fmt.Printf("val: %s\n", string(val))
 	if err != nil {
 		return err
 	}
 
-	err = r.rdb.LPush(r.ctx, eventType, val).Err()
+	err = r.rdb.LPush(r.ctx, eventType+":pub", string(val)).Err()
 
 	if err != nil {
 		return err
+	}
+
+	var subs []string
+	subs, err = r.GetSubscribers(eventType + ":sub")
+	if err != nil {
+		return err
+	}
+
+	for _, s := range subs {
+		go func(s string) {
+			agent := fiber.Post(s + "/events")
+			agent.JSON(event)
+			_, _, errs := agent.Bytes()
+			if len(errs) > 0 {
+				fmt.Println("Error publishing event to: " + s)
+			}
+		}(s)
 	}
 
 	return nil
 }
 
 func (r *RedisClient) GetSubscribers(eventType string) ([]string, error) {
-	res := r.rdb.SMembers(r.ctx, eventType)
+	res := r.rdb.SMembers(r.ctx, eventType+":sub")
 	return res.Result()
 }
 
 func (r *RedisClient) GetEventsByType(eventType string) ([]*model.UnknownEvent, error) {
-	res := r.rdb.LRange(r.ctx, eventType, 0, -1)
+	res := r.rdb.LRange(r.ctx, eventType+":pub", 0, -1)
 	vals, err := res.Result()
 	if err != nil {
 		return nil, err
@@ -87,7 +99,7 @@ func (r *RedisClient) GetEventsByType(eventType string) ([]*model.UnknownEvent, 
 }
 
 func (r *RedisClient) DeleteSubscriber(eventType string, host string) error {
-	err := r.rdb.SRem(r.ctx, eventType, host).Err()
+	err := r.rdb.SRem(r.ctx, eventType+":sub", host).Err()
 	if err != nil {
 		return err
 	}
