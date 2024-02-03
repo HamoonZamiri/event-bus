@@ -103,9 +103,9 @@ func handleEvent(c *fiber.Ctx) error {
 
 func subscribeToEvents(events []string) error {
 	for _, event := range events {
-		agent := fiber.Post("http://localhost:8080/api/subscribe")
+		agent := fiber.Post("http://event-bus:8080/api/subscribe")
 		body := fiber.Map{
-			"host":       "http://localhost:8081",
+			"host":       "http://posts:8081",
 			"event_type": event,
 		}
 
@@ -120,7 +120,7 @@ func subscribeToEvents(events []string) error {
 }
 
 func publishEvent(eventType string, data interface{}) error {
-	agent := fiber.Post("http://localhost:8080/api/publish")
+	agent := fiber.Post("http://event-bus:8080/api/publish")
 	body := fiber.Map{
 		"type": eventType,
 		"data": data,
@@ -156,6 +156,5 @@ func main() {
 	app.Post("/", post)
 	app.Post("/events", handleEvent)
 
-	app.Listen(":8081")
+	app.Listen("localhost:8081")
 }
-
