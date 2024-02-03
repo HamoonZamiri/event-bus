@@ -54,7 +54,7 @@ func (r *RedisClient) PublishEvent(eventType string, event *model.UnknownEvent) 
 	}
 
 	var subs []string
-	subs, err = r.GetSubscribers(eventType + ":sub")
+	subs, err = r.GetSubscribers(eventType)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (r *RedisClient) PublishEvent(eventType string, event *model.UnknownEvent) 
 			agent.JSON(event)
 			_, _, errs := agent.Bytes()
 			if len(errs) > 0 {
-				fmt.Println("Error publishing event to: " + s)
+				fmt.Println("Error publishing event to: " + s + " " + errs[0].Error())
 			}
 		}(s)
 	}

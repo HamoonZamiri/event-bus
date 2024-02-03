@@ -37,9 +37,9 @@ var comments = make(map[string]Comment)
 
 func subscribeToEvents(events []string) error {
 	for _, event := range events {
-		agent := fiber.Post("http://localhost:8080/api/subscribe")
+		agent := fiber.Post("http://event-bus:8080/api/subscribe")
 		body := fiber.Map{
-			"host":       "http://localhost:8083",
+			"host":       "http://comments:8083",
 			"event_type": event,
 		}
 
@@ -60,7 +60,7 @@ func handleEvent(c *fiber.Ctx) error {
 	}
 
 	switch unknownEvent.Type {
-	case "comment_moderated:pub":
+	case "comment_moderated":
 		commentEvent := new(CommentEvent)
 		if err := c.BodyParser(commentEvent); err != nil {
 			return err
@@ -82,7 +82,7 @@ func handleEvent(c *fiber.Ctx) error {
 }
 
 func publishEvent(eventType string, data interface{}) error {
-	agent := fiber.Post("http://localhost:8080/api/publish")
+	agent := fiber.Post("http://event-bus:8080/api/publish")
 	body := fiber.Map{
 		"type": eventType,
 		"data": data,
@@ -134,4 +134,3 @@ func main() {
 
 	app.Listen(":8083")
 }
-

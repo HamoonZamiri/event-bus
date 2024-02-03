@@ -156,5 +156,5 @@ func main() {
 	app.Post("/", post)
 	app.Post("/events", handleEvent)
 
-	app.Listen("localhost:8081")
+	app.Listen(":8081")
 }
