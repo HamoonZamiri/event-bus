@@ -6,6 +6,6 @@ type Controller struct {
 	EventStore service.EventService
 }
 
-func NewController(eventStore *service.EventStore) *Controller {
+func NewController(eventStore service.EventService) *Controller {
 	return &Controller{EventStore: eventStore}
 }

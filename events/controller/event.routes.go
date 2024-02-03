@@ -9,4 +9,5 @@ func (controller *Controller) Register(app *fiber.App) {
 	core.Get("/subscribe/:type", controller.GetSubscribers)
 	core.Get("/:type", controller.GetEventsByType)
 	core.Delete("/:type/:host", controller.DeleteSubscriber)
+	core.Get("/", controller.ListEventTypes)
 }

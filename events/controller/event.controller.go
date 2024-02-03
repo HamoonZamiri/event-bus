@@ -106,3 +106,14 @@ func (controller *Controller) DeleteSubscriber(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).SendString("Subscriber successfully deleted")
 }
+
+func (controller *Controller) ListEventTypes(c *fiber.Ctx) error {
+	eventTypes, err := controller.EventStore.ListEventTypes()
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Event types retrieved successfully",
+		"data":    eventTypes,
+	})
+}

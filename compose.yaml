@@ -1,0 +1,37 @@
+services:
+  cache:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+  event-bus:
+    container_name: go-event-bus
+    build:
+      context: ./events
+    depends_on:
+      - cache
+    ports:
+      - "8080:8080"
+  posts:
+    container_name: posts_service
+    build:
+      context: ./posts
+    depends_on:
+      - event-bus
+    ports:
+      - "8081:8081"
+  comments:
+    container_name: comments_service
+    build:
+      context: ./comments
+    depends_on:
+      - event-bus
+    ports:
+      - "8083:8083"
+  moderation:
+    container_name: moderation_service
+    build:
+      context: ./moderation
+    depends_on:
+      - event-bus
+    ports:
+      - "8082:8082"
