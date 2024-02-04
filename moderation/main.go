@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,10 +30,19 @@ type CommentEvent = Event[Comment]
 
 var comments = make([]Comment, 0)
 
+func getEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("env var %s is not set", key)
+	}
+	return val
+}
+
 func publishEvent(eventType string, data interface{}) error {
+	eventBusUrl := getEnv("EVENT_BUS_URL")
 	// Publish an event to the event bus
 
-	agent := fiber.Post("http://event-bus:8080/api/publish")
+	agent := fiber.Post(eventBusUrl + "/api/publish")
 	body := fiber.Map{
 		"type": eventType,
 		"data": data,
@@ -47,10 +58,13 @@ func publishEvent(eventType string, data interface{}) error {
 }
 
 func subscribeToEvents(events []string) error {
+	eventBusUrl := getEnv("EVENT_BUS_URL")
+	moderationUrl := getEnv("MODERATION_URL")
+
 	for _, event := range events {
-		agent := fiber.Post("http://event-bus:8080/api/subscribe")
+		agent := fiber.Post(eventBusUrl + "/api/subscribe")
 		body := fiber.Map{
-			"host":       "http://moderation:8082",
+			"host":       moderationUrl,
 			"event_type": event,
 		}
 

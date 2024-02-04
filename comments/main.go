@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -35,11 +38,22 @@ type (
 
 var comments = make(map[string]Comment)
 
+func getEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("env var %s is not set", key)
+	}
+	return val
+}
+
 func subscribeToEvents(events []string) error {
+	eventBusUrl := getEnv("EVENT_BUS_URL")
+	commentsUrl := getEnv("COMMENTS_URL")
+
 	for _, event := range events {
-		agent := fiber.Post("http://event-bus:8080/api/subscribe")
+		agent := fiber.Post(eventBusUrl + "/api/subscribe")
 		body := fiber.Map{
-			"host":       "http://comments:8083",
+			"host":       commentsUrl,
 			"event_type": event,
 		}
 
@@ -82,7 +96,9 @@ func handleEvent(c *fiber.Ctx) error {
 }
 
 func publishEvent(eventType string, data interface{}) error {
-	agent := fiber.Post("http://event-bus:8080/api/publish")
+	eventBusUrl := getEnv("EVENT_BUS_URL")
+
+	agent := fiber.Post(eventBusUrl + "/api/publish")
 	body := fiber.Map{
 		"type": eventType,
 		"data": data,

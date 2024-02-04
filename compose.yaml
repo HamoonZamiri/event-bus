@@ -11,6 +11,8 @@ services:
       - cache
     ports:
       - "8080:8080"
+    env_file:
+      - .env
   posts:
     container_name: posts_service
     build:
@@ -19,6 +21,8 @@ services:
       - event-bus
     ports:
       - "8081:8081"
+    env_file:
+      - .env
   comments:
     container_name: comments_service
     build:
@@ -27,6 +31,8 @@ services:
       - event-bus
     ports:
       - "8083:8083"
+    env_file:
+      - .env
   moderation:
     container_name: moderation_service
     build:
@@ -35,3 +41,5 @@ services:
       - event-bus
     ports:
       - "8082:8082"
+    env_file:
+      - .env
