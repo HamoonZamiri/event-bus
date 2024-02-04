@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -41,6 +42,14 @@ type Response[T any] struct {
 }
 
 var posts = make(map[string]Post)
+
+func getEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("env var %s is not set", key)
+	}
+	return val
+}
 
 func post(c *fiber.Ctx) error {
 	id := uuid.New().String()
@@ -102,10 +111,14 @@ func handleEvent(c *fiber.Ctx) error {
 }
 
 func subscribeToEvents(events []string) error {
+	eventBusUrl := getEnv("EVENT_BUS_URL")
+
+	postsUrl := getEnv("POSTS_URL")
+
 	for _, event := range events {
-		agent := fiber.Post("http://event-bus:8080/api/subscribe")
+		agent := fiber.Post(eventBusUrl + "/api/subscribe")
 		body := fiber.Map{
-			"host":       "http://posts:8081",
+			"host":       postsUrl,
 			"event_type": event,
 		}
 
@@ -120,7 +133,9 @@ func subscribeToEvents(events []string) error {
 }
 
 func publishEvent(eventType string, data interface{}) error {
-	agent := fiber.Post("http://event-bus:8080/api/publish")
+	eventBusUrl := getEnv("EVENT_BUS_URL")
+
+	agent := fiber.Post(eventBusUrl + "/api/publish")
 	body := fiber.Map{
 		"type": eventType,
 		"data": data,
